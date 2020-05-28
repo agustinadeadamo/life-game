@@ -1,7 +1,4 @@
-# Aclaraciones
-Realizo el challenge para postular como front-end dev
-
-# Poke-app
+# Life Game
 
 ## Comenzando
 
@@ -38,13 +35,10 @@ npm install
 | Comando  |  Descripción |  
 |---|---|
 | start  |  Inicializa la aplicación en modo desarrollo tendrá actualización en vivo y funcionalidades que le ayudaran con sus tareas.  |  
-|  test |  Inicializa las pruebas unitarias a la aplicación de react. | 
-
 
 ### Ejemplo del uso de los comandos:
 
 ```
 npm run start (o) yarn start << Si tiene yarn >>
-npm run test (o) yarn test  << Si tiene yarn >>
 ```
 

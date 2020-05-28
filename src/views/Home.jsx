@@ -1,281 +1,239 @@
-import React, {useState, useEffect } from 'react';
-import { Col, Row, Container } from 'react-bootstrap'
+/**
+ * Dependencias
+ */
+import React, {useEffect, useState, useRef, useCallback} from "react";
 
-// Componentes
-import Card from '../components/Card/Card';
-import CardData from '../components/CardData/CardData'
-import Paginator from '../components/Paginator/Paginator';
-import Loader from '../components/Loader/Loader'
-import Language from '../components/Language/Language';
+/**
+ * Componentes
+ */
+import Actions from './Sections/Actions/Actions'
+import Board from './Sections/Board/Board'
 
-// Utils
-import {get} from '../utils/request';
+/**
+ * Vista
+ */
+const Home = () => {
 
-// Images
-import Logo from'../assets/logo.png';
+  // Generación
+  const [ generation, changeGeneration ] = useState( 0 );
 
-// Styles 
-import './style.scss';
+  // Tablero
+  const [ board, changeBoard ] = useState( null )
 
+  // Tamaño tablero
+  const [ boardSize, setBoardSize] = useState({width: 50, height: 30});
 
-const Home = () =>  {
+  // Referencia del setInterval
+  const intervalRef = useRef();
 
-  // Initial State
-  const [ pokemonList, setPokemonList ]             = useState([]);
-  const [ loader, showLoader ]                      = useState(true);
-  const [ cardDetail, showCardDetail ]              = useState(false);
-  const [ cardDetailData, setCardDetailData ]       = useState({});
-  const [ previousPage, changePreviousPage ]        = useState('');
-  const [ nextPage, changeNextPage ]                = useState('');
-  const [ getUrl, changeInitialGet ]                = useState('https://pokeapi.co/api/v2/pokemon?limit=5');
-  const [ language, changeLanguage ]                = useState('es');
-  const [ pokemonSelected, changePokemonSelected ]  = useState({});
+  // Referencia del generador inicial
+  const generationRef = useRef(0)
+
 
   /**
-   * Native hook from react that executes when component is mounted and each time 'getUrl' and 'language' changes
+   * Función que se ejecuta cada vez que se selecciona una celula
+   * 
+   * @param { number } indexRow 
+   * @param { number } indexColumn 
+   * @param { number } statusCell 
+   */
+  const onClickCell = (indexRow, indexColumn) => {
+
+    // Creamos un nuevo array
+    let newBoard = [...board]
+
+    // Actualizamos el valor de la celula correspondiente
+    newBoard[indexRow][indexColumn] = ~~!newBoard[indexRow][indexColumn] 
+
+    // Actualizo el estado
+    changeBoard(newBoard)
+
+  }
+ 
+
+  
+  /**
+   * Función que se ejecuta cada vez que se debe volver a setear el board en blanco 
+   */
+  const createBoard = useCallback(() => {
+
+    // Creo las filas segun está seteado en el state 
+    let rowsBoard = new Array(boardSize.height)
+
+    // Recorro las filas
+    for(let i = 0; i < rowsBoard.length; i++) {
+
+      // A cada fila le creo las celulas segun está seteado en el state
+      let columsBoard = new Array(boardSize.width)
+
+      // Recorro cada celula
+      for(let i = 0; i < columsBoard.length; i++) {
+
+        // Le asigno el valor inicial
+        columsBoard[i] = 0
+
+      }
+
+      // Asigno a cada fila el array de celulas
+      rowsBoard[i] = columsBoard
+
+    }
+
+    // Actualizo el estado
+    changeBoard(rowsBoard)
+
+  },[])
+  
+  /**
+   * Hook que se ejecuta cuendo se monta el componente
    */
   useEffect(() => {
-   
-    // Function that gets pokemon list
-    const getPokemonsList = async () => {
 
-      try {
+    // Llamo a la función que crea el array de filas y celulas
+    createBoard()
 
-        // Shows Loader
-        showLoader(true);
+  },[])
 
-        // Gets list of pokemons
-        let response = await get(getUrl);
-  
-        // Validates response
-        if( response.hasOwnProperty("status") && response.status === 200) {
+
+  /**
+   * Función que se ejecuta cada vez que se presiona el boton iniciar
+   */
+  const onClickStart = () =>  {
+
+    // Declaramos una variable local para que tome los cambios el setInterval
+    let boardRef = board;
+
+    // Ejecutamos un setInterval
+    let timer =  setInterval(() => {
+
+      // Declaraciones iniciales
+      let firstRowToModifie = 0
+      let lastRowToModifie = 0
+      let firstColumnToModifie = 0
+      let lastColumnToModifie = 0
+      let lastColumn = 0
+      let lastRow = board.length
+
+      // Creamos un nuevo board para no modificar el actual ya que sobre el actual vamos a iterar
+      let newBoard = [] 
+
+      // Por cada fila
+      for(let indexRow = 0; indexRow < boardRef.length; indexRow++){
+
+        // Agregamos cada fila al nuevo board
+        newBoard.push([])
+
+        // Si es la primera fila la actual, la primera fila por recorrer va a ser la ultima del array
+        firstRowToModifie = indexRow === 0 ? lastRow - 1 : indexRow - 1;
+
+        // Si es la ultima fila la actual, la ultima fila por recorrer va a ser la primera del array
+        lastRowToModifie = indexRow === lastRow -1 ? 0 : indexRow + 1
+
+        // Por cada columna
+        for(let indexColumn = 0; indexColumn < boardRef[indexRow].length; indexColumn++){
+
+          // Agregamos un nuevo array
+          newBoard[indexRow].push([])
+
+          // Obtenemos el lenght de celulas por fila
+          lastColumn = boardRef[indexRow].length
+
+          // Volvemos a declarar las celulas vivas alrededor en cero por cada celula
+          let cells = 0
+
+          // Si es la primera celula de la fila la actual, se va a verificar la ultima celula de de la fila
+          firstColumnToModifie = indexColumn === 0 ? lastColumn -1 : indexColumn - 1;
+
+          // Si es la ultima celula de la fila la actual, se va a verificar la primera celula de de la fila
+          lastColumnToModifie = indexColumn === lastColumn - 1 ? 0 : indexColumn + 1
+
+          // Recorro la fila anterior y en caso de encontrar una celula viva sumo 1 a cells
+          boardRef[firstRowToModifie][firstColumnToModifie] && cells++
+          boardRef[firstRowToModifie][indexColumn] && cells++
+          boardRef[firstRowToModifie][lastColumnToModifie] && cells++
+
+          // Recorro la fila actual, solo la celula anterior y la proxima, y en caso de encontrar una celula viva sumo 1 a cells
+          boardRef[indexRow][firstColumnToModifie] && cells++
+          boardRef[indexRow][lastColumnToModifie] && cells++
+
+          // Recorro la proxima fila y en caso de encontrar una celula viva sumo 1 a cells
+          boardRef[lastRowToModifie][firstColumnToModifie] && cells++
+          boardRef[lastRowToModifie][indexColumn] && cells++
+          boardRef[lastRowToModifie][lastColumnToModifie] && cells++
+
+
+          // Modificamos el estado de la celula de acuerdo a sus reglas
+          // En caso de que la celula actual esté viva y tenga de 2 a 3 celulas vivas alrededor
+          if( boardRef[indexRow][indexColumn] && cells >= 2 && cells <= 3){
+            // La celula actual se mantiene vive
+            newBoard[indexRow][indexColumn] = 1
           
-          // Destructuring response
-          let { results = [], next, previous } = response; 
+          // En caso de que la celula actual no este viva pero tenga 3 celulas vivas alrededor
+          } else if( !boardRef[indexRow][indexColumn] && cells === 3){
+            // La celula actual se reaviva
+            newBoard[indexRow][indexColumn] = 1
           
-          // Changes state
-          changePreviousPage(previous);
-          changeNextPage(next);
+          } else {
+            // Si no cumple con ninguna de las condiciones anteriores muere o se mantiene muerta
+            newBoard[indexRow][indexColumn] = 0  
+          }
 
-          // Gets each pokemon data
-          getEachPokemonData(results);
-        
-        } else {
-          // Hides loader
-          showLoader(false);
         }
 
-      } catch(error){
-        console.log(error)
       }
 
-    }
+      // Actualizamos la variable local para el setInterval
+      boardRef = newBoard
 
-    // Function that gets each pokemon data
-    const getEachPokemonData = async (pokemonList) => {
+      // Contamos una generación mas
+      changeGeneration(prevGeneration => prevGeneration + 1)
 
-      try {
+      // Actualizamos el board
+      changeBoard(newBoard)
+      
+    }, 300);
 
-        // Executes request for each pokemon
-        let pokemon = await Promise.all(pokemonList.map(async (pokemonItem) => {
-                  
-            let response  = await get(pokemonItem.url)
+    // Le asignamos a la referencia el setInterval
+    intervalRef.current = timer
 
-            // Validates response
-            if( response.hasOwnProperty('status') && response.status === 200) {
-  
-              // Create specific object por pokemon
-              return {
-                id: response.id,
-                name: response.name,
-                abilities: response.abilities,
-                img: response.sprites.front_default,
-                weight: response.weight,
-                height: response.height
-              }
-                
-            } else {
-
-              // Returns empty object
-              return {}
-            }
-    
-      }))
-    
-      // Changes state
-      setPokemonList(pokemon)
-      showLoader(false)
-        
-      }catch(error){
-        console.log(error)
-      }
-
-    }
-
-    getPokemonsList();
-
-  }, [getUrl, language])
-
-  /**
-   * Native hook from react that executes when component is mounted and every time pokemonSelected changes
-   */
-  useEffect( () => {
-
-    const getAbilities = async () => {
-
-      try {
-
-        // Validates if there is a pokemon selected with its abilities
-        if( Array.isArray(pokemonSelected.abilities)){
-          
-          // Gets all the abilities data
-          let abilities = await Promise.all(pokemonSelected.abilities.map(async (abilityItem) => {
-
-            // Request
-            let response = await get(abilityItem.ability.url)
-
-            // Validates response
-            if( response.hasOwnProperty("status") && response.status === 200) {
-
-              // Returns ability objects with specific data
-              return {
-                names: response.names, 
-                description: response.flavor_text_entries
-              }
-            
-            } else {
-            
-              // Returns empty object
-              return {}
-            
-            }
-
-          }))  
-          
-          // Creates specific object for pokemon abilitie
-          let pokemonAbilitie = {
-            name: pokemonSelected.name,
-            abilities: abilities,
-            img: pokemonSelected.img
-          }
-           
-          // Changes state
-          setCardDetailData(pokemonAbilitie)
-            
-          }
-
-      }catch(error){
-        console.log(error)
-      }
-
-  }
-
-  getAbilities()
-
-},[pokemonSelected])
-
-
-  /**
-   * Function indicates pokemon selected and shows cardData
-   */
-  const onClickPokemon = async (id) => {
-
-    try {
-
-      // Filters from list which has been selected
-      let pokemonSelected = pokemonList.find((pokemon) => pokemon.id === id)            
-
-      // Changes pokemon selected
-      changePokemonSelected(pokemonSelected)
-
-      // ShowCardData
-      showCardDetail(true)
-    
-    } catch(error){
-      console.log(error)
-    }
-
-  }
-
-  return (
-
-    <div id="pokeapi">
-
-      {/** Header */}
-      <header>
-          <div className="container-logo">
-            <img src={Logo} alt="logo" />
-          </div>
-      </header>
-
-      {/** Main Content */}
-      <Container>
-        <Row className="justify-content-center">
-          <Col lg={9}>
-          
-          {
-            loader 
-            ? <Loader/>
-            : <div>
-
-              {/** Select Language */}
-              <Row className="d-flex justify-content-between align-items-center">
-                <Col sm={4}>
-
-                  <Language
-                    onClickCountry={(value) => changeLanguage(value)} 
-                  />
-                
-                </Col>
-              </Row>
-
-              {/** List of pokemons */}
-              <Row className="justify-content-md-center">
-                <Col md={12}>
-                
-                {
-                  pokemonList.map((pokemon, key) => {
-                    return <Card 
-                              onClickPokemon={(id) => onClickPokemon(id)} 
-                              key={key}
-                              {...pokemon} 
-                            />
-                  })
-                }
-                
-                </Col>
-              </Row>
-                  
-              {/** Paginator */}
-              <Row className="d-flex justify-content-end align-items-center">
-                <Col sm={6} className="text-right">
-                      
-                      <Paginator
-                        onClickNext={() => changeInitialGet(nextPage)}
-                        onClickPrevious={() => changeInitialGet(previousPage)}
-                        next={nextPage}
-                        previous={previousPage}
-                      />
-               
-                </Col>
-              </Row>
-
-              {/** CardData */}
-              <CardData
-                language={language}
-                cardDetailData={cardDetailData}
-                showCardDetail={cardDetail}
-                handleClose={() => showCardDetail(false)}
-              />
-            </div>
-          }
-          </Col>
-        </Row>
-      </Container>
-
-    </div>
-  
-  );
 }
 
-export default Home
+/**
+ * Función que se ejecuta cada vez que se presiona el botón reiniciar
+ */
+const onClickReload = () => {
+
+  // Vuelve al valor inicial de las generaciones
+  changeGeneration(generationRef.current)
+
+  // Eliminamos el setInterval
+  clearInterval(intervalRef.current)
+
+  // Llamamos a la función que vuelve a crear la tabla
+  createBoard()
+
+}
+
+  return(
+    <div>
+
+      {/** Acciones */}
+      <Actions
+        onClickStart={() => onClickStart()}
+        onClickStop={() => clearInterval(intervalRef.current)}
+        onClickReload={() => onClickReload()}
+        generation={generation}
+      />
+
+      {/** Tablero */}
+      <Board
+        onClickCell={(indexRow, indexColumn) => onClickCell(indexRow, indexColumn)}
+        boardSize={boardSize} 
+        board={board} />
+
+    </div>
+  )
+
+}
+
+export default Home;
