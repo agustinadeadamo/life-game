@@ -19,7 +19,7 @@ Primero realizar la clonación del proyecto en una carpeta destinada al desarrol
 
 En su consola ubiquese dentro de la carpeta destino y ejecute el siguiente comando en su consola
 ```
-git clone https://github.com/agustinadeadamo/poke-app.git
+git clone https://github.com/agustinadeadamo/life-game.git
 ```
 
 ### Instalar dependencias
