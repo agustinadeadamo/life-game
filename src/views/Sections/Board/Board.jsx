@@ -16,6 +16,7 @@ const Board = memo(({ ...props }) => {
 
   // Tamaño de cada celula
   let [ cellSize, setCellSize ] = useState( 0 );
+  
 
   /**
    * Hook que se ejecuta cada vez que se monta el componente Board
@@ -50,7 +51,7 @@ const Board = memo(({ ...props }) => {
     // Limpiamos el evento cada vez que se desmonta
     return () => window.removeEventListener('resize', updateWindowSize);
 
-  }, [])
+  }, [props])
 
   return (
     <BoardContainer id="board-container">
@@ -59,12 +60,13 @@ const Board = memo(({ ...props }) => {
       {
         props.board && props.board.map((row, indexRow) => {
           return (
-            <Row>
+            <Row key={indexRow}>
 
               {/** Celulas */}
               {
                 row.map((column,indexColumn) => {
                   return <Cell 
+                            key={indexColumn}
                             onClick={ (e) => props.onClickCell(indexRow, indexColumn) } 
                             column={column} 
                             cellSize={cellSize}/>

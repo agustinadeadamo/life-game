@@ -46,7 +46,7 @@ From your shell (Git Shell, Git Bash, or other terminal application of your choo
 
     git config --global user.name "YOUR NAME"
 
-You'll also want to set up your email address.
+You'll also want to set up your email address.   
 
     git config --global user.email "YOUR EMAIL ADDRESS"
 

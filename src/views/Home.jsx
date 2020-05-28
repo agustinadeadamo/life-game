@@ -21,7 +21,7 @@ const Home = () => {
   const [ board, changeBoard ] = useState( null )
 
   // Tamaño tablero
-  const [ boardSize, setBoardSize] = useState({width: 50, height: 30});
+  const boardSize = {width: 50, height: 30};
 
   // Referencia del setInterval
   const intervalRef = useRef();
@@ -82,7 +82,7 @@ const Home = () => {
     // Actualizo el estado
     changeBoard(rowsBoard)
 
-  },[])
+  },[boardSize.height, boardSize.width])
   
   /**
    * Hook que se ejecuta cuendo se monta el componente
@@ -92,7 +92,7 @@ const Home = () => {
     // Llamo a la función que crea el array de filas y celulas
     createBoard()
 
-  },[])
+  },[createBoard])
 
 
   /**
